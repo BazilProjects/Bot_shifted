@@ -58,7 +58,7 @@ def prepare(df,time,open_price):
     features = ['high', 'low', 'close']
     df =df.drop(columns=['symbol', 'timeframe', 'brokerTime', 'volume', 'spread','tickVolume','high', 'low', 'close'])
     df.loc[len(df)] = [time, open_price]
-    print(df)
+    #print(df)
     df['time'] = pd.to_datetime(df['time'])
     df['time'] = df['time'].astype(int)// 10
     df['previous_close'] = df['open'].shift(1)
@@ -85,7 +85,7 @@ def prepare(df,time,open_price):
     #df['rolling_std'] = df['previous_close'].rolling(window=5).std()
 
     df['rolling_11'] = df['open']/df['time']
-    print(df)
+    #print(df)
     # Split data into train/test
     X = df.iloc[-1]#.drop(columns=['next_close','target'])
 
