@@ -53,17 +53,11 @@ def load_data(df):
     
     X=np.array(X)
     f_target=np.array(f_target)
-    print("Before reshaping:")
-    print("X shape:", X.shape)
-    print("f_target shape:", f_target.shape)
 
     # Reshape
     f_target = f_target.reshape(1, -1)  # Flatten to one row
     X = X.reshape(X.shape[0], -1)  # Flatten each sequence
 
-    print("After reshaping:")
-    print("X shape:", X.shape)
-    print("f_target shape:", f_target.shape)
 
     X = np.vstack((X, f_target))
 
@@ -138,8 +132,11 @@ async def main2():
                 
                 X_new=load_data(df)
                 classification_prediction=classifier_model.predict(X_new)[-1]
-                regressor_prediction=model.predict(X_new)[-1].round(decimal_places(df['open'].iloc[-1]))
-                if regressor_prediction > current_market_price:
+                print(classification_prediction)
+                regressor_prediction=model.predict(X_new)[-1]
+                print(regressor_prediction)
+                regressor_prediction=regressor_prediction.round(decimal_places(df['open'].iloc[-1]))
+                if classification_prediction==1 and regressor_prediction > current_market_price:
                     stop_loss=None#current_open-stop_loss_away
                     #take_profit=trademax-(lag_size/2)
                     try:
@@ -148,7 +145,7 @@ async def main2():
                             symbol=symbol,
                             volume=0.01,
                             stop_loss=stop_loss,
-                            take_profit=regressor_prediction,
+                            take_profit=regressor_prediction[0],
                         )
                         print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
                         
@@ -156,7 +153,7 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
-                elif  regressor_prediction < current_market_price:
+                elif classification_prediction==0 and regressor_prediction < current_market_price:
                     stop_loss=None#current_open+stop_loss_away
                     #take_profit=trademax+(lag_size/2)
                     try:
@@ -165,7 +162,7 @@ async def main2():
                             symbol=symbol,
                             volume=0.01,
                             stop_loss=stop_loss,
-                            take_profit=regressor_prediction,
+                            take_profit=regressor_prediction[0],
                         )
                         print(f'Sell Signal (T)   :Sell Trade successful For Symbol :{symbol}')
                         Trader_success=True
@@ -182,5 +179,5 @@ async def main2():
         except Exception as e:
             raise e
             print(f"An error occurred: {e}")
-#def main():
-asyncio.run(main2())
+def main():
+    asyncio.run(main2())
