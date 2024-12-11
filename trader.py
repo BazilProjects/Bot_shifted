@@ -7,6 +7,7 @@ from metaapi_cloud_sdk import MetaApi
 import asyncio
 import pickle
 import os
+from sklearn.preprocessing import MinMaxScaler
 import websocket
 import json
 import time
@@ -32,69 +33,43 @@ def decimal_places(number):
     else:
         # If there is no decimal point, return 0
         return 0
-def compute_sma(data, window=14):
-    return data['open'].rolling(window=window).mean()
+# Load and preprocess market data
+def load_data(df):
+    seq_len=180
+    df = df.drop(columns=['symbol', 'timeframe', 'brokerTime', 'volume']).tail(1500).reset_index(drop=True)
+    df['time'] = pd.to_datetime(df['time']).astype(int) // 10**9
+    f_target=df.tail(seq_len)
+    df=df.head(len(df)-seq_len)
 
-def compute_rsi(data, window=14):
-    delta = data['open'].diff()
-    gain = delta.where(delta > 0, 0)
-    loss = -delta.where(delta < 0, 0)
-    avg_gain = gain.rolling(window=window).mean()
-    avg_loss = loss.rolling(window=window).mean()
-    rs = avg_gain / avg_loss
-    return 100 - (100 / (1 + rs))
+    df = df.dropna()
+    # Scale data
+    scaler = MinMaxScaler()
+    scaled_data = scaler.fit_transform(df)
+    f_target = scaler.fit_transform(f_target)
+    # Create sequences
+    X=[]
+    for i in range(len(scaled_data)-seq_len):
+        X.append(scaled_data[i: i + seq_len])
+    
+    X=np.array(X)
+    f_target=np.array(f_target)
+    print("Before reshaping:")
+    print("X shape:", X.shape)
+    print("f_target shape:", f_target.shape)
 
+    # Reshape
+    f_target = f_target.reshape(1, -1)  # Flatten to one row
+    X = X.reshape(X.shape[0], -1)  # Flatten each sequence
 
-# Anomaly Detection Function
-def detect_anomalies(X, contamination=0.05):
-    """
-    Detect anomalies in the input features using Isolation Forest.
-    """
-    isolation_forest = IsolationForest(contamination=contamination, random_state=42)
-    anomaly_labels = isolation_forest.fit_predict(X)
-    return anomaly_labels  # -1 for anomalies, 1 for normal
+    print("After reshaping:")
+    print("X shape:", X.shape)
+    print("f_target shape:", f_target.shape)
 
-def prepare(df,time,open_price):
-    features = ['high', 'low', 'close']
-    df =df.drop(columns=['symbol', 'timeframe', 'brokerTime', 'volume', 'spread','tickVolume','high', 'low', 'close'])
-    df.loc[len(df)] = [time, open_price]
-    #print(df)
-    df['time'] = pd.to_datetime(df['time'])
-    df['time'] = df['time'].astype(int)// 10
-    df['previous_close'] = df['open'].shift(1)
-
-    # Feature Engineering
-    short_window = 2
-    long_window = 6
-    rsi_window = 14
-
-    df['SMA_short'] = compute_sma(df, short_window)
-    df['SMA_long'] = compute_sma(df, long_window)
-    df['RSI'] = compute_rsi(df, rsi_window)
-
-    df["RSI_signal"] = np.where(df["RSI"] < 40, 1, np.where(df["RSI"] > 60, 1, 0))
-    #df["trade_action"] = np.where(df["RSI_signal"] == 1, 1, np.where(df["RSI_signal"] == -1, 0, np.nan))
-
-
-    #df['SMA_RSI_interaction'] = df['SMA_short'] * df['RSI']
-    #df['trend_strength'] = df['SMA_long'] - df['SMA_short']
-
-
-    # Adding rolling statistics
-    df['rolling_mean'] = df['open'].rolling(window=5).mean()
-    #df['rolling_std'] = df['previous_close'].rolling(window=5).std()
-
-    df['rolling_11'] = df['open']/df['time']
-    #print(df)
-    # Split data into train/test
-    X = df.iloc[-1]#.drop(columns=['next_close','target'])
+    X = np.vstack((X, f_target))
 
     return X
-
-
-
-
 async def main2():
+    
     print('Up and runing')
     api = MetaApi(token)
     account = await api.metatrader_account_api.get_account(accountId)
@@ -116,11 +91,13 @@ async def main2():
     await connection.wait_synchronized()
     
     # Load the saved voting models
-    with open('trading_models.pkl', 'rb') as f:
+    with open('trading_models_2.pkl', 'rb') as f:
         models = pickle.load(f)
     # Load the saved voting models
-    with open('trading_classifier_models.pkl', 'rb') as f:
+
+    with open('trading_classifier_models_2.pkl', 'rb') as f:
         classifier_models = pickle.load(f)
+
 
     # Iterate through the models and print their details
     for (key, model), (_, classifier_model) in zip(models.items(), classifier_models.items()):
@@ -133,7 +110,9 @@ async def main2():
         try:
             try:
                 # Fetch historical price data
-                candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=20)
+                #pages = 100
+                #file_path = f"/home/omenyo/Documents/Github2/Bot_Vector/COLLECT CANDLES/{timeframe}/{symbol}{timeframe}{pages}.csv"
+                candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=1024+180)
 
                 print('Fetched the latest candle data successfully')
             except Exception as e:
@@ -148,6 +127,7 @@ async def main2():
                 raise e
 
             if not df.empty:
+                
                 prices = await connection.get_symbol_price(symbol)
                 print(prices)
                 # Extract bid and ask prices
@@ -155,13 +135,11 @@ async def main2():
                 ask_price = float(prices['ask'])
                 current_market_price=((bid_price+ask_price)/2)
                 current_open=current_market_price
-                time=prices['time']
-                open_price=bid_price
-                X_new=prepare(df,time,open_price)
-                print(X_new)
-                classification_prediction=classifier_model.predict(np.array(X_new).reshape(1,-1))
-                regressor_prediction=model.predict(np.array(X_new).reshape(1,-1)).round(decimal_places(df['open'].iloc[-1]))
-                if classification_prediction[0]==1 and regressor_prediction > current_market_price:
+                
+                X_new=load_data(df)
+                classification_prediction=classifier_model.predict(X_new)[-1]
+                regressor_prediction=model.predict(X_new)[-1].round(decimal_places(df['open'].iloc[-1]))
+                if regressor_prediction > current_market_price:
                     stop_loss=None#current_open-stop_loss_away
                     #take_profit=trademax-(lag_size/2)
                     try:
@@ -170,7 +148,7 @@ async def main2():
                             symbol=symbol,
                             volume=0.01,
                             stop_loss=stop_loss,
-                            take_profit=regressor_prediction[0],
+                            take_profit=regressor_prediction,
                         )
                         print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
                         
@@ -178,7 +156,7 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
-                elif classification_prediction[0]==0 and regressor_prediction > current_market_price:
+                elif  regressor_prediction < current_market_price:
                     stop_loss=None#current_open+stop_loss_away
                     #take_profit=trademax+(lag_size/2)
                     try:
@@ -187,7 +165,7 @@ async def main2():
                             symbol=symbol,
                             volume=0.01,
                             stop_loss=stop_loss,
-                            take_profit=regressor_prediction[0],
+                            take_profit=regressor_prediction,
                         )
                         print(f'Sell Signal (T)   :Sell Trade successful For Symbol :{symbol}')
                         Trader_success=True
@@ -204,5 +182,5 @@ async def main2():
         except Exception as e:
             raise e
             print(f"An error occurred: {e}")
-def main():
-    asyncio.run(main2())
+#def main():
+asyncio.run(main2())
