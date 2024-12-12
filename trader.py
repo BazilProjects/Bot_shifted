@@ -36,7 +36,7 @@ def decimal_places(number):
 # Load and preprocess market data
 def load_data(df):
     seq_len=180
-    df = df.drop(columns=['symbol', 'timeframe', 'brokerTime', 'volume'])#.tail(1500).reset_index(drop=True)
+    df = df.drop(columns=['symbol', 'timeframe', 'brokerTime', 'volume']).reset_index(drop=True)
     df['time'] = pd.to_datetime(df['time']).astype(int) // 10**9
     f_target=df.tail(seq_len)
     df=df.head(len(df)-seq_len)
@@ -106,7 +106,7 @@ async def main2():
                 # Fetch historical price data
                 #pages = 100
                 #file_path = f"/home/omenyo/Documents/Github2/Bot_Vector/COLLECT CANDLES/{timeframe}/{symbol}{timeframe}{pages}.csv"
-                candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=311)
+                candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=1024)
 
                 print('Fetched the latest candle data successfully')
             except Exception as e:
@@ -179,5 +179,5 @@ async def main2():
         except Exception as e:
             raise e
             print(f"An error occurred: {e}")
-def main():
-    asyncio.run(main2())
+#def main():
+asyncio.run(main2())
