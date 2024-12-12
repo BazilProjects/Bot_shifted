@@ -61,7 +61,7 @@ def load_data(df):
 
     X = np.vstack((X, f_target))
 
-    return X
+    return X[:-114]
 async def main2():
     
     print('Up and runing')
