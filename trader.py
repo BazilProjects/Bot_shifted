@@ -145,7 +145,7 @@ async def main2():
                             symbol=symbol,
                             volume=0.01,
                             stop_loss=stop_loss,
-                            take_profit=regressor_prediction[0],
+                            take_profit=regressor_prediction,
                         )
                         print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
                         
@@ -162,7 +162,7 @@ async def main2():
                             symbol=symbol,
                             volume=0.01,
                             stop_loss=stop_loss,
-                            take_profit=regressor_prediction[0],
+                            take_profit=regressor_prediction,
                         )
                         print(f'Sell Signal (T)   :Sell Trade successful For Symbol :{symbol}')
                         Trader_success=True
