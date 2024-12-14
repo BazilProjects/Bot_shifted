@@ -50,7 +50,7 @@ def load_data(df):
 
 
     # Smoothing function using a moving average
-    def smooth_data(data, window_size=8):
+    def smooth_data(data, window_size=96):
         #Apply a moving average to smooth the data
         return data.rolling(window=window_size, min_periods=1).mean()
 
@@ -117,7 +117,7 @@ async def main2():
                 # Fetch historical price data
                 #pages = 100
                 #file_path = f"/home/omenyo/Documents/Github2/Bot_Vector/COLLECT CANDLES/{timeframe}/{symbol}{timeframe}{pages}.csv"
-                candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=1024)
+                candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=1570)
 
                 print('Fetched the latest candle data successfully')
             except Exception as e:
