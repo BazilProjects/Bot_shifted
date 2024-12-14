@@ -46,7 +46,7 @@ def load_data(df):
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(df)
     f_target = scaler.fit_transform(f_target)
-    scaled_df = pd.DataFrame(scaled_data, columns=df..columns)
+    scaled_df = pd.DataFrame(scaled_data, columns=df.columns)
 
 
     # Smoothing function using a moving average
