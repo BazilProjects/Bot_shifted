@@ -46,6 +46,17 @@ def load_data(df):
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(df)
     f_target = scaler.fit_transform(f_target)
+    scaled_df = pd.DataFrame(scaled_data, columns=df.drop(columns=['target']).columns)
+
+
+    # Smoothing function using a moving average
+    def smooth_data(data, window_size=8):
+        #Apply a moving average to smooth the data
+        return data.rolling(window=window_size, min_periods=1).mean()
+
+    # Apply smoothing to the scaled DataFrame
+    scaled_data= scaled_df.apply(lambda x: smooth_data(pd.Series(x)))
+
     # Create sequences
     X=[]
     for i in range(len(scaled_data)-seq_len):
