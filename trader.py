@@ -111,8 +111,8 @@ async def main2():
             decision=prepare(df)
             if decision is not None:
                 if decision=='HIGH':
-                    stop_loss=current_market_price+4
-                    take_profit=current_market_price-8
+                    stop_loss=current_market_price+8
+                    take_profit=current_market_price-5
                     try:
                         
                         result = await connection.create_market_sell_order(
@@ -128,8 +128,8 @@ async def main2():
                         print('Trade failed with error:')
                         print(api.format_error(err))
                 elif decision=='LOW':
-                    stop_loss=current_market_price-4
-                    take_profit=current_market_price+8
+                    stop_loss=current_market_price-8
+                    take_profit=current_market_price+5
                     try:
                         result = await connection.create_market_buy_order(
                             symbol=symbol,
