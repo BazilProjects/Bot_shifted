@@ -1,8 +1,6 @@
 import pandas as pd
 
-# Load your data
-file_path = "/home/omenyo/Documents/Github2/Bot_Vector/candles_data_stpRNG_15m.csv"
-df = pd.read_csv(file_path)
+
 
 # Fractal High/Low Detection Function
 def calculate_fractals(df, window=2):
