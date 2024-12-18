@@ -143,6 +143,8 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
+            else:
+                print('Trade Not possible')
 
                 
         print('*'*20)
