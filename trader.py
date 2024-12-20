@@ -87,6 +87,7 @@ async def main2():
         try:
             # Fetch historical price data
             candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=18)
+            candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='1m', start_time=None, limit=18)
 
             print('Fetched the latest candle data successfully')
         except Exception as e:
@@ -94,9 +95,11 @@ async def main2():
         try:
             if not isinstance(candles, str):
                 df=pd.DataFrame(candles)
+                df2=pd.DataFrame(candles_1m)
             else:
                 
                 df=pd.DataFrame()
+                
         except Exception as e:
             raise e
 
@@ -109,8 +112,9 @@ async def main2():
             current_market_price=((bid_price+ask_price)/2)
             current_open=current_market_price
             decision=prepare(df)
-            if decision is not None:
-                if decision=='HIGH':
+            decision_1m=prepare(df2)
+            if decision is not None and decision_1m is not None:
+                if decision=='HIGH' and decision_1m =='HIGH':
                     stop_loss=current_market_price+8
                     take_profit=current_market_price-5
                     try:
@@ -127,7 +131,7 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
-                elif decision=='LOW':
+                elif decision=='LOW' and decision_1m== 'LOW':
                     stop_loss=current_market_price-8
                     take_profit=current_market_price+5
                     try:
