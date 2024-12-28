@@ -43,6 +43,45 @@ accountId = os.getenv('ACCOUNT_ID') or '3d90c2da-2cb6-4929-b339-2e70820cb975'
 symbol='Step Index'
 timeframe='5m'
 
+
+import pandas as pd
+import pandas_ta as ta
+import plotly.graph_objects as go
+
+def trading_signals(data):
+    # Calculate EMAs
+    data['ema_3'] = ta.ema(data['close'], length=3)
+    data['ema_7'] = ta.ema(data['close'], length=7)
+
+    # Define Bullish and Bearish conditions
+    # Bullish: Price above both EMAs, and 20 EMA crosses above 50 EMA (Golden Cross)
+    data['bullish_signal'] = (
+        (data['close'] > data['ema_3']) &
+        (data['close'] > data['ema_7']) &
+        (data['ema_3'] > data['ema_7']) &
+        (data['ema_3'].shift(1) <= data['ema_7'].shift(1))
+    )
+
+    # Bearish: Price below both EMAs, and 20 EMA crosses below 50 EMA (Death Cross)
+    data['bearish_signal'] = (
+        (data['close'] < data['ema_3']) &
+        (data['close'] < data['ema_7']) &
+        (data['ema_3'] < data['ema_7']) &
+        (data['ema_3'].shift(1) >= data['ema_7'].shift(1))
+    )
+
+    # Create Action Column
+    data['action'] = 'HOLD'  # Default action
+    data.loc[data['bullish_signal'], 'action'] = 'BUY'
+    data.loc[data['bearish_signal'], 'action'] = 'SELL'
+
+    # Filter only rows with signals
+    signals = data['action'].iloc[-1]
+
+    #print(signals[['close', 'ema_3', 'ema_7', 'action', 'stop_loss', 'take_profit']])
+    return signals
+
+
 def prepare(df):
     # Apply fractal calculation
     df = calculate_fractals(df, window=2)
@@ -80,14 +119,17 @@ async def main2():
     # Wait until terminal state synchronized to the local state
     print('Waiting for SDK to synchronize to terminal state (may take some time depending on your history size)')
     await connection.wait_synchronized()
-
+    """
     prices = await connection.get_symbols()
     print(prices)
+    """
     try:
         try:
             # Fetch historical price data
-            candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=18)
-            candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='1m', start_time=None, limit=18)
+            candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=40)
+            candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='1m', start_time=None, limit=40)
+            candles_15m = await account.get_historical_candles(symbol=symbol, timeframe='15m', start_time=None, limit=40)
+            candles_1h = await account.get_historical_candles(symbol=symbol, timeframe='1h', start_time=None, limit=40)
 
             print('Fetched the latest candle data successfully')
         except Exception as e:
@@ -96,6 +138,8 @@ async def main2():
             if not isinstance(candles, str):
                 df=pd.DataFrame(candles)
                 df2=pd.DataFrame(candles_1m)
+                df3=pd.DataFrame(candles_15m)
+                df4=pd.DataFrame(candles_1h)
             else:
                 
                 df=pd.DataFrame()
@@ -105,16 +149,24 @@ async def main2():
 
         if not df.empty:
             prices = await connection.get_symbol_price(symbol)
-            print(prices)
+            #print(prices)
             # Extract bid and ask prices
             bid_price =float(prices['bid'])
             ask_price = float(prices['ask'])
             current_market_price=((bid_price+ask_price)/2)
             current_open=current_market_price
+            #decision==5m
             decision=prepare(df)
+            #decision==1m
             decision_1m=prepare(df2)
-            if decision is not None and decision_1m is not None:
-                if decision=='HIGH' and decision_1m =='HIGH':
+            #decision==15m
+            # Example usage
+            signals = trading_signals(df3)
+            signals_for_5m = trading_signals(df)
+            signals_for_1h = trading_signals(df4)
+
+            if decision is not None and (decision_1m is not None or signals != 'HOLD' or signals_for_5m != 'HOLD' or signals_for_1h != 'HOLD'):
+                if decision=='HIGH' and (decision_1m =='HIGH' or signals == 'SELL' or signals_for_5m == 'SELL' or signals_for_1h !='SELL'):
                     stop_loss=current_market_price+8
                     take_profit=current_market_price-5
                     try:
@@ -131,7 +183,7 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
-                elif decision=='LOW' and decision_1m== 'LOW':
+                elif decision=='LOW' and (decision_1m== 'LOW' or signals == 'BUY'  or signals_for_5m == 'BUY' or signals_for_1h !='BUY'):
                     stop_loss=current_market_price-8
                     take_profit=current_market_price+5
                     try:
