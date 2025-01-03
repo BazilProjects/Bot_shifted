@@ -275,7 +275,7 @@ async def main2():
             stop_loss=current_market_price+8
             take_profit=current_market_price-8
             if decision is not None :
-                if prediction< current_market_price and prediction>take_profit:
+                if prediction< current_market_price:
                     
                     try:
                         
@@ -283,7 +283,7 @@ async def main2():
                             symbol=symbol,
                             volume=0.1,
                             stop_loss=stop_loss,
-                            take_profit=take_profit,
+                            take_profit=prediction[0],
                         )
                         print(f'Sell_Signal (T)   :Sell Trade successful For Symbol :{symbol}')
                         
@@ -293,14 +293,14 @@ async def main2():
                         print(api.format_error(err))
                 stop_loss=current_market_price-8
                 take_profit=current_market_price+8
-                if  prediction>current_market_price and prediction<take_profit:
+                if  prediction>current_market_price:
                     
                     try:
                         result = await connection.create_market_buy_order(
                             symbol=symbol,
                             volume=0.1,
                             stop_loss=stop_loss,
-                            take_profit=take_profit,
+                            take_profit=prediction[0],
                         )
                         print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
                         
