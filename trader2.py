@@ -272,7 +272,7 @@ async def main2():
             prediction=future_prediction[-1]
             print(f'Future Pred: {prediction}')
             print(current_market_price)
-            stop_loss=current_market_price+8
+            stop_loss=None
             take_profit=current_market_price-8
             if decision is not None :
                 if prediction< current_market_price:
@@ -291,7 +291,7 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
-                stop_loss=current_market_price-8
+
                 take_profit=current_market_price+8
                 if  prediction>current_market_price:
                     
