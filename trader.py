@@ -197,7 +197,7 @@ def prepare_df_2(df):
     )
 
     df = df.dropna()
-    """
+    
 
     # Initialize scalers for X and y
 
@@ -210,7 +210,7 @@ def prepare_df_2(df):
         #y.append(scaled_target[i + seq_len - 1])  # Scaled target
 
     X = np.array(X)
-    """
+    
 
     return df
 
@@ -235,10 +235,10 @@ async def main2():
     # Wait until terminal state synchronized to the local state
     print('Waiting for SDK to synchronize to terminal state (may take some time depending on your history size)')
     await connection.wait_synchronized()
-    """
-    prices = await connection.get_symbols()
-    print(prices)
-    """
+    
+    #prices = await connection.get_symbols()
+    #print(prices)
+    
     try:
         try:
             # Fetch historical price data
