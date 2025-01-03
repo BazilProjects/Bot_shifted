@@ -363,7 +363,6 @@ import websocket
 import json
 import time
 from datetime import datetime, timedelta
-from tensorflow.keras.models import load_model
 import joblib
 # Load the scalers
 scaler_X = joblib.load('scaler_X.pkl')
