@@ -212,7 +212,7 @@ def prepare_df_2(df):
     X = np.array(X)
     
 
-    return X
+    return X,df
 
 
 async def main2():
@@ -239,7 +239,7 @@ async def main2():
     try:
         try:
             # Fetch historical price data
-            candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=260)
+            candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=500)
             print('Fetched the latest candle data successfully')
         except Exception as e:
             raise e
@@ -261,53 +261,64 @@ async def main2():
             ask_price = float(prices['ask'])
             current_market_price=((bid_price+ask_price)/2)
             current_open=current_market_price
-            decision=prepare(df)
+            #decision=prepare(df)
 
-            X=prepare_df_2(df)
+            X,df=prepare_df_2(df)
+            last_rows = df.iloc[-seq_len:]
+            X1 = np.array(scaler_X.transform(last_rows))#.flatten()).reshape(1, -1)
+            #X1 = X1.reshape(1, X1.shape[0], X1.shape[1])  # Reshape X1 to match X's shape
+            print("Shape of X:", X.shape)
+            print("Shape of X1:", X1.shape)
+
+            X1 = np.expand_dims(X1, axis=0)  # Adding the extra dimension, making X1 3D
+            print("Shape of X1 after expansion:", X1.shape)
+
+            X = np.vstack((X, X1))  # Stack the arrays
 
             X = X.reshape(X.shape[0], -1)
             # Make prediction
             future_prediction = model.predict(X)
             future_prediction=scaler_y.inverse_transform(future_prediction.reshape(-1, 1))
             prediction=future_prediction[-1]
+            prediction=prediction[0]
             print(f'Future Pred: {prediction}')
             print(current_market_price)
             stop_loss=None
             take_profit=current_market_price-8
-            if decision is not None :
-                if prediction< current_market_price:
-                    
-                    try:
-                        
-                        result = await connection.create_market_sell_order(
-                            symbol=symbol,
-                            volume=0.1,
-                            stop_loss=stop_loss,
-                            take_profit=prediction[0],
-                        )
-                        print(f'Sell_Signal (T)   :Sell Trade successful For Symbol :{symbol}')
-                        
-                        Trader_success=True
-                    except Exception as err:
-                        print('Trade failed with error:')
-                        print(api.format_error(err))
 
-                take_profit=current_market_price+8
-                if  prediction>current_market_price:
+            if prediction< current_market_price:
+                
+                try:
                     
-                    try:
-                        result = await connection.create_market_buy_order(
-                            symbol=symbol,
-                            volume=0.1,
-                            stop_loss=stop_loss,
-                            take_profit=prediction[0],
-                        )
-                        print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
-                        
-                        Trader_success=True
-                    except Exception as err:
-                        print('Trade failed with error:')
-                        print(api.format_error(err))
+                    result = await connection.create_market_sell_order(
+                        symbol=symbol,
+                        volume=0.1,
+                        stop_loss=stop_loss,
+                        take_profit=prediction,
+                    )
+                    print(f'Sell_Signal (T)   :Sell Trade successful For Symbol :{symbol}')
+                    
+                    Trader_success=True
+                except Exception as err:
+                    print('Trade failed with error:')
+                    print(api.format_error(err))
+
+            take_profit=current_market_price+8
+            if  prediction>current_market_price:
+                
+                try:
+                    result = await connection.create_market_buy_order(
+                        symbol=symbol,
+                        volume=0.1,
+                        stop_loss=stop_loss,
+                        take_profit=prediction,
+                    )
+                    print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
+                    
+                    Trader_success=True
+                except Exception as err:
+                    print('Trade failed with error:')
+                    print(api.format_error(err))
             else:
                 print('Trade Not possible')
 
