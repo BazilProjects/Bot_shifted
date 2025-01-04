@@ -279,7 +279,20 @@ async def main2():
             # Make prediction
             future_prediction = model.predict(X)
             future_prediction=scaler_y.inverse_transform(future_prediction.reshape(-1, 1))
-            prediction=future_prediction[-1]
+            prediction = (future_prediction[-1] + 
+              df['close'].iloc[-2] + 
+              df['close'].iloc[-3] 
+              ) / 3
+            """
+            df['close'].iloc[-4] + 
+            df['close'].iloc[-5] + 
+            df['close'].iloc[-6] + 
+            df['close'].iloc[-7] + 
+            df['close'].iloc[-8] + 
+            df['close'].iloc[-9] + 
+            df['close'].iloc[-10]
+            """
+
             prediction=prediction[0]
             print(f'Future Pred: {prediction}')
             print(current_market_price)
