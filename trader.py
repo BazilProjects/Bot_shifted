@@ -367,10 +367,6 @@ from datetime import datetime, timedelta
 from tensorflow.keras.models import load_model
 import joblib
 # Load the scalers
-scaler_X = joblib.load('scaler_X.pkl')
-scaler_y = joblib.load('scaler_y.pkl')
-
-print("Scalers loaded successfully.")
 
 
 ema_length=10
@@ -378,10 +374,6 @@ macd_fast=12
 macd_slow=26
 macd_signal=9
 seq_len=180
-
-# Load the model in .keras format
-model =  joblib.load('extra_trees_model.pkl')
-print("Model loaded successfully.")
 
 
 
@@ -439,9 +431,9 @@ def prepare(df):
 
     # Determine if it's a fractal high, fractal low, or none
     if not pd.isna(third_last_row['fractal_high']) and third_last_row['fractal_high'] != 0:
-        return 'HIGH'
+        return 'SELL'
     elif not pd.isna(third_last_row['fractal_low']) and third_last_row['fractal_low'] != 0:
-        return 'LOW'
+        return 'BUY'
     else:
         return None
 
@@ -570,12 +562,14 @@ async def main2():
         try:
             # Fetch historical price data
             candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=500)
+            candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='1m', start_time=None, limit=500)
             print('Fetched the latest candle data successfully')
         except Exception as e:
             raise e
         try:
             if not isinstance(candles, str):
                 df=pd.DataFrame(candles)
+                df_1m=pd.DataFrame(candles_1m)
             else:
                 
                 df=pd.DataFrame()
@@ -591,77 +585,47 @@ async def main2():
             ask_price = float(prices['ask'])
             current_market_price=((bid_price+ask_price)/2)
             current_open=current_market_price
-            #decision=prepare(df)
+            decision=prepare(df)
+            decision_1m=prepare(df_1m)
 
-            X,df=prepare_df_2(df)
-            last_rows = df.iloc[-seq_len:]
-            X1 = np.array(scaler_X.transform(last_rows))#.flatten()).reshape(1, -1)
-            #X1 = X1.reshape(1, X1.shape[0], X1.shape[1])  # Reshape X1 to match X's shape
-            print("Shape of X:", X.shape)
-            print("Shape of X1:", X1.shape)
-
-            X1 = np.expand_dims(X1, axis=0)  # Adding the extra dimension, making X1 3D
-            print("Shape of X1 after expansion:", X1.shape)
-
-            X = np.vstack((X, X1))  # Stack the arrays
-
-            X = X.reshape(X.shape[0], -1)
-            # Make prediction
-            future_prediction = model.predict(X)
-            future_prediction=scaler_y.inverse_transform(future_prediction.reshape(-1, 1))
-            prediction = (future_prediction[-1] + 
-              df['close'].iloc[-2] + 
-              df['close'].iloc[-3] 
-              ) / 3
-            """
-            df['close'].iloc[-4] + 
-            df['close'].iloc[-5] + 
-            df['close'].iloc[-6] + 
-            df['close'].iloc[-7] + 
-            df['close'].iloc[-8] + 
-            df['close'].iloc[-9] + 
-            df['close'].iloc[-10]
-            """
-
-            prediction=prediction[0]
-            print(f'Future Pred: {prediction}')
-            print(current_market_price)
-            stop_loss=None
-            take_profit=current_market_price-8
-
-            if prediction< current_market_price:
-                
-                try:
+            stop_loss=current_market_price+1.5
+            take_profit=current_market_price-3
+            if decision is not None and decision_1m is not None:
+                if decision=='SELL' and decision_1m=='SELL':
                     
-                    result = await connection.create_market_sell_order(
-                        symbol=symbol,
-                        volume=0.1,
-                        stop_loss=stop_loss,
-                        take_profit=prediction,
-                    )
-                    print(f'Sell_Signal (T)   :Sell Trade successful For Symbol :{symbol}')
+                    try:
+                        
+                        result = await connection.create_market_sell_order(
+                            symbol=symbol,
+                            volume=0.1,
+                            stop_loss=stop_loss,
+                            take_profit=take_profit,
+                        )
+                        print(f'Sell_Signal (T)   :Sell Trade successful For Symbol :{symbol}')
+                        
+                        Trader_success=True
+                    except Exception as err:
+                        print('Trade failed with error:')
+                        print(api.format_error(err))
+                stop_loss=current_market_price-1.5
+                take_profit=current_market_price+3
+                if   decision=='BUY' and decision_1m=='BUY':
                     
-                    Trader_success=True
-                except Exception as err:
-                    print('Trade failed with error:')
-                    print(api.format_error(err))
-
-            take_profit=current_market_price+8
-            if  prediction>current_market_price:
-                
-                try:
-                    result = await connection.create_market_buy_order(
-                        symbol=symbol,
-                        volume=0.1,
-                        stop_loss=stop_loss,
-                        take_profit=prediction,
-                    )
-                    print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
-                    
-                    Trader_success=True
-                except Exception as err:
-                    print('Trade failed with error:')
-                    print(api.format_error(err))
+                    try:
+                        result = await connection.create_market_buy_order(
+                            symbol=symbol,
+                            volume=0.1,
+                            stop_loss=stop_loss,
+                            take_profit=take_profit,
+                        )
+                        print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
+                        
+                        Trader_success=True
+                    except Exception as err:
+                        print('Trade failed with error:')
+                        print(api.format_error(err))
+                else:
+                    print('Trade Not possible')
             else:
                 print('Trade Not possible')
 
