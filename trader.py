@@ -591,7 +591,7 @@ async def main2():
             stop_loss=current_market_price+1
             take_profit=current_market_price-2.3
             if decision is not None and decision_1m is not None:
-                if decision=='SELL' and decision_1m=='SELL':
+                if decision=='SELL' :#and decision_1m=='SELL':
                     
                     try:
                         
@@ -609,7 +609,7 @@ async def main2():
                         print(api.format_error(err))
                 stop_loss=current_market_price-1
                 take_profit=current_market_price+2.3
-                if   decision=='BUY' and decision_1m=='BUY':
+                if   decision=='BUY':# and decision_1m=='BUY':
                     
                     try:
                         result = await connection.create_market_buy_order(
