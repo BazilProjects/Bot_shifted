@@ -588,8 +588,8 @@ async def main2():
             decision=prepare(df)
             decision_1m=prepare(df_1m)
 
-            stop_loss=current_market_price+1.5
-            take_profit=current_market_price-3
+            stop_loss=current_market_price+1
+            take_profit=current_market_price-2.3
             if decision is not None and decision_1m is not None:
                 if decision=='SELL' and decision_1m=='SELL':
                     
@@ -607,8 +607,8 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
-                stop_loss=current_market_price-1.5
-                take_profit=current_market_price+3
+                stop_loss=current_market_price-1
+                take_profit=current_market_price+2.3
                 if   decision=='BUY' and decision_1m=='BUY':
                     
                     try:
