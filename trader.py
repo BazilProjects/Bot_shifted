@@ -427,7 +427,7 @@ def prepare(df):
     # Apply fractal calculation
     df = calculate_fractals(df, window=2)
     # Check the third last row
-    third_last_row = df.iloc[-3]
+    third_last_row = df.iloc[-1]
 
     # Determine if it's a fractal high, fractal low, or none
     if not pd.isna(third_last_row['fractal_high']) and third_last_row['fractal_high'] != 0:
@@ -452,7 +452,7 @@ def prepare_df_2(df):
         return df
 
     # Fractal Calculations
-    df = calculate_fractals(df, window=5)
+    df = calculate_fractals(df, window=2)
     def calculate_semi_fractals(df, window=2):
         df['semi_fractal_high'] = None
         df['semi_fractal_low'] = None
