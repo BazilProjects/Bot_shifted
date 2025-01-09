@@ -423,20 +423,46 @@ def trading_signals(data):
     return signals
 
 
-def prepare(df):
+def trading_signals(data):
+    # Calculate Simple Moving Averages (SMA)
+    data['sma_3'] = data['close'].rolling(window=3).mean()
+    data['sma_7'] = data['close'].rolling(window=7).mean()
+
+    # Define Bullish and Bearish conditions based on SMA crossovers
+    # Bullish: 3-period SMA crosses above 7-period SMA (Golden Cross)
+    data['bullish_signal'] = (
+        (data['sma_3'] > data['sma_7']) &
+        (data['sma_3'].shift(1) <= data['sma_7'].shift(1))  # Golden Cross
+    )
+
+    # Bearish: 3-period SMA crosses below 7-period SMA (Death Cross)
+    data['bearish_signal'] = (
+        (data['sma_3'] < data['sma_7']) &
+        (data['sma_3'].shift(1) >= data['sma_7'].shift(1))  # Death Cross
+    )
+
+    # Create Action Column based on the signals
+    data['action'] = 'HOLD'  # Default action
+    data.loc[data['bullish_signal'], 'action'] = 'BUY'
+    data.loc[data['bearish_signal'], 'action'] = 'SELL'
+
+    return data
+
+def prepare(df, df2):
     # Apply fractal calculation
     df = calculate_fractals(df, window=2)
     # Check the third last row
-
+    df2=trading_signals(df2)
     for i in range(1, 4):  # Start with the last row (-1) up to the third last row (-3)
         current_row = df.iloc[-i]
+        current_row_2=df2.iloc[-i]
 
         # Check for fractal high (SELL condition)
-        if not pd.isna(current_row['fractal_high']) and current_row['fractal_high'] != 0:
+        if not pd.isna(current_row['fractal_high']) and current_row['fractal_high'] != 0 and current_row_2['bearish_signal']=='SELL':
             return 'SELL'
 
         # Check for fractal low (BUY condition)
-        elif not pd.isna(current_row['fractal_low']) and current_row['fractal_low'] != 0:
+        elif not pd.isna(current_row['fractal_low']) and current_row['fractal_low'] != 0 and current_row_2['bullish_signal']=='BUY':
             return 'BUY'
 
     # If no conditions are met, return None
@@ -590,12 +616,12 @@ async def main2():
             ask_price = float(prices['ask'])
             current_market_price=((bid_price+ask_price)/2)
             current_open=current_market_price
-            decision=prepare(df)
-            decision_1m=prepare(df_1m)
+            decision=prepare(df=df,df2=df_1m)
+            #decision_1m=prepare(df_1m)
 
             stop_loss=current_market_price+1
             take_profit=current_market_price-2.3
-            if decision is not None and decision_1m is not None:
+            if decision is not None:# and decision_1m is not None:
                 if decision=='SELL' :#and decision_1m=='SELL':
                     
                     try:
