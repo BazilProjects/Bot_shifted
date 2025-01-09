@@ -453,6 +453,7 @@ def prepare(df, df2):
     df = calculate_fractals(df, window=2)
     # Check the third last row
     df2=trading_signals(df2)
+    """
     for i in range(1, 4):  # Start with the last row (-1) up to the third last row (-3)
         current_row = df.iloc[-i]
         current_row_2=df2.iloc[-i]
@@ -464,7 +465,17 @@ def prepare(df, df2):
         # Check for fractal low (BUY condition)
         elif not pd.isna(current_row['fractal_low']) and current_row['fractal_low'] != 0 and current_row_2['bullish_signal']=='BUY':
             return 'BUY'
+    """
+    current_row = df.iloc[-1]
+    current_row_2=df2.iloc[-1]
 
+    # Check for fractal high (SELL condition)
+    if not pd.isna(current_row['fractal_high']) and current_row['fractal_high'] != 0 and current_row_2['bearish_signal']=='SELL':
+        return 'SELL'
+
+    # Check for fractal low (BUY condition)
+    elif not pd.isna(current_row['fractal_low']) and current_row['fractal_low'] != 0 and current_row_2['bullish_signal']=='BUY':
+        return 'BUY'
     # If no conditions are met, return None
     return None
 
@@ -593,7 +604,7 @@ async def main2():
         try:
             # Fetch historical price data
             candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=50)
-            candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='1m', start_time=None, limit=50)
+            candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='15m', start_time=None, limit=50)
             print('Fetched the latest candle data successfully')
         except Exception as e:
             raise e
