@@ -478,6 +478,21 @@ def prepare(df, df2):
         return 'BUY'
     # If no conditions are met, return None
     return None
+def prepare2(df):
+    # Apply fractal calculation
+    df = calculate_fractals(df, window=2)
+
+    current_row = df.iloc[-1]
+
+    # Check for fractal high (SELL condition)
+    if not pd.isna(current_row['fractal_high']) and current_row['fractal_high'] != 0:
+        return 'SELL'
+
+    # Check for fractal low (BUY condition)
+    elif not pd.isna(current_row['fractal_low']) and current_row['fractal_low'] != 0:
+        return 'BUY'
+    # If no conditions are met, return None
+    return None
 
 def prepare_df_2(df):
     # Fractal High/Low Detection Function
@@ -604,14 +619,14 @@ async def main2():
         try:
             # Fetch historical price data
             candles = await account.get_historical_candles(symbol=symbol, timeframe=timeframe, start_time=None, limit=50)
-            candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='15m', start_time=None, limit=50)
+            #candles_1m = await account.get_historical_candles(symbol=symbol, timeframe='15m', start_time=None, limit=50)
             print('Fetched the latest candle data successfully')
         except Exception as e:
             raise e
         try:
             if not isinstance(candles, str):
                 df=pd.DataFrame(candles)
-                df_1m=pd.DataFrame(candles_1m)
+                #df_1m=pd.DataFrame(candles_1m)
             else:
                 
                 df=pd.DataFrame()
@@ -627,11 +642,11 @@ async def main2():
             ask_price = float(prices['ask'])
             current_market_price=((bid_price+ask_price)/2)
             current_open=current_market_price
-            decision=prepare(df=df,df2=df_1m)
+            decision=prepare2(df=df)
             #decision_1m=prepare(df_1m)
 
-            stop_loss=current_market_price+1
-            take_profit=current_market_price-2.3
+            stop_loss=current_market_price+2
+            take_profit=current_market_price-1
             if decision is not None:# and decision_1m is not None:
                 if decision=='SELL' :#and decision_1m=='SELL':
                     
@@ -649,8 +664,8 @@ async def main2():
                     except Exception as err:
                         print('Trade failed with error:')
                         print(api.format_error(err))
-                stop_loss=current_market_price-1
-                take_profit=current_market_price+2.3
+                stop_loss=current_market_price-2
+                take_profit=current_market_price+1
                 if   decision=='BUY':# and decision_1m=='BUY':
                     
                     try:
