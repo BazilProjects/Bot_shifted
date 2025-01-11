@@ -358,6 +358,7 @@ import numpy as np
 from itertools import combinations
 from metaapi_cloud_sdk import MetaApi
 import asyncio
+import pandas_ta as ta
 import pickle
 import os
 import websocket
@@ -481,15 +482,17 @@ def prepare(df, df2):
 def prepare2(df):
     # Apply fractal calculation
     df = calculate_fractals(df, window=2)
+    df['rsi'] = ta.rsi(df['close'], rsi_period=14)
 
     current_row = df.iloc[-1]
+    print(f'Current Rsi :{current_row["rsi"]}')
 
     # Check for fractal high (SELL condition)
-    if not pd.isna(current_row['fractal_high']) and current_row['fractal_high'] != 0:
+    if not pd.isna(current_row['fractal_high']) and current_row['fractal_high'] != 0 and current_row['rsi']>60:
         return 'SELL'
 
     # Check for fractal low (BUY condition)
-    elif not pd.isna(current_row['fractal_low']) and current_row['fractal_low'] != 0:
+    elif not pd.isna(current_row['fractal_low']) and current_row['fractal_low'] != 0 and current_row['rsi']<40:
         return 'BUY'
     # If no conditions are met, return None
     return None
@@ -684,7 +687,7 @@ async def main2():
                 else:
                     print('Trade Not possible')
             else:
-                print('Trade Not possible')
+                print('Condition is None')
 
                 
         print('*'*20)
