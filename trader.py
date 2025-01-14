@@ -340,5 +340,5 @@ async def main2():
     except Exception as e:
         raise e
         print(f"An error occurred: {e}")
-#def main():
-asyncio.run(main2())
+def main():
+    asyncio.run(main2())
