@@ -16,6 +16,5 @@ lightgbm
 catboost
 xgboost
 websocket-client
-tensorflow
 keras
 joblib

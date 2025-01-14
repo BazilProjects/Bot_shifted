@@ -28,7 +28,6 @@ import numpy as np
 from itertools import combinations
 from metaapi_cloud_sdk import MetaApi
 import asyncio
-import pickle
 import os
 import websocket
 import json
