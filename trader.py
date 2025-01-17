@@ -53,9 +53,9 @@ def analyze_bias(data):
             data['low'][i] < data['low'][i + 3]):
             lower_lows += 1
 
-    if higher_highs > 4:
+    if higher_highs >= 2:
         market_bias = "Bullish"
-    elif lower_lows > 4:
+    elif lower_lows >= 2:
         market_bias = "Bearish"
     else:
         market_bias = "Ranging"
@@ -92,10 +92,10 @@ def check_last_close(data, fvgs, order_blocks):
     relevant_ob_ranges = []
 
     # Collect ranges for the last FVGs and order blocks
-    for idx, low, high in fvgs[-3:]:  # Get the last six FVGs
+    for idx, low, high in fvgs[-6:]:  # Get the last six FVGs
         relevant_fvg_ranges.append((low, high))
     
-    for idx, low, high in order_blocks[-3:]:  # Get the last six Order Blocks
+    for idx, low, high in order_blocks[-6:]:  # Get the last six Order Blocks
         relevant_ob_ranges.append((low, high))
 
     # Check if the last close is in any FVG or OB
