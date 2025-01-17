@@ -232,8 +232,8 @@ async def main2():
                 place_buy_orders=place_buy_order(market_bias, condition, decision)
 
                 if place_buy_orders=='SELL':
-                    stop_loss=current_market_price+3
-                    take_profit=current_market_price-10
+                    stop_loss=current_market_price+2
+                    take_profit=current_market_price-7
                     try:
                         
                         result = await connection.create_market_sell_order(
@@ -251,8 +251,8 @@ async def main2():
 
                 
                 if  place_buy_orders =='BUY':
-                    stop_loss=current_market_price-3
-                    take_profit=current_market_price+10
+                    stop_loss=current_market_price-2
+                    take_profit=current_market_price+7
                     try:
                         result = await connection.create_market_buy_order(
                             symbol=symbol,
