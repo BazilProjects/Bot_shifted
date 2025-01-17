@@ -53,9 +53,9 @@ def analyze_bias(data):
             data['low'][i] < data['low'][i + 3]):
             lower_lows += 1
 
-    if higher_highs > 3:
+    if higher_highs > 4:
         market_bias = "Bullish"
-    elif lower_lows > 3:
+    elif lower_lows > 4:
         market_bias = "Bearish"
     else:
         market_bias = "Ranging"
@@ -233,7 +233,7 @@ async def main2():
 
                 if place_buy_orders=='SELL':
                     stop_loss=current_market_price+3
-                    take_profit=current_market_price-9
+                    take_profit=current_market_price-6
                     try:
                         
                         result = await connection.create_market_sell_order(
@@ -252,7 +252,7 @@ async def main2():
                 
                 if  place_buy_orders =='BUY':
                     stop_loss=current_market_price-3
-                    take_profit=current_market_price+9
+                    take_profit=current_market_price+6
                     try:
                         result = await connection.create_market_buy_order(
                             symbol=symbol,
