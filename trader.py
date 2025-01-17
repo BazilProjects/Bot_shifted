@@ -161,7 +161,7 @@ accountId = os.getenv('ACCOUNT_ID') or '3d90c2da-2cb6-4929-b339-2e70820cb975'
 
 # Constants
 symbol='Step Index'
-timeframe='15m'
+timeframe='5m'
 
 
 
