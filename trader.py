@@ -112,10 +112,10 @@ def check_last_close(data, fvgs, order_blocks):
 # Place Buy Order
 def place_buy_order(market_bias, condition, decision):
     if decision!=None:
-        if market_bias in ["Bullish", "Ranging"] and condition and decision== 'LOW':
+        if market_bias in ["Bullish", "Ranging"] and condition :#and decision== 'LOW':
             print(f"Placing a buy order. Condition: {condition}, Market Bias: {market_bias}")
             return 'BUY'
-        elif market_bias in ["Bearish", "Ranging"] and condition and decision == 'HIGH':
+        elif market_bias in ["Bearish", "Ranging"] and condition:# and decision == 'HIGH':
             print(f"Condition: {condition}, Market Bias: {market_bias}")
             return 'SELL'
     else:
@@ -228,7 +228,7 @@ async def main2():
             condition = check_last_close(df, fvgs, order_blocks)
             print("Condition:", condition)
 
-            if condition is not None and decision is not None:
+            if condition is not None :#and decision is not None:
                 place_buy_orders=place_buy_order(market_bias, condition, decision)
 
                 if place_buy_orders=='SELL':
