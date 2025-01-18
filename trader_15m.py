@@ -229,7 +229,7 @@ async def main2():
             condition = check_last_close(df2, fvgs, order_blocks)
             print("Condition:", condition)
 
-            if condition is not None :#and decision is not None:
+            if condition:#and decision is not None:
                 place_buy_orders=place_buy_order(market_bias, condition, decision)
 
                 if place_buy_orders=='SELL':
