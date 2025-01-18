@@ -53,9 +53,9 @@ def analyze_bias(data):
             data['low'][i] < data['low'][i + 3]):
             lower_lows += 1
 
-    if higher_highs >= 2:
+    if higher_highs > 3:
         market_bias = "Bullish"
-    elif lower_lows >= 2:
+    elif lower_lows > 3:
         market_bias = "Bearish"
     else:
         market_bias = "Ranging"
@@ -213,6 +213,7 @@ async def main2():
             current_market_price=((bid_price+ask_price)/2)
             current_open=current_market_price
             # Example Code
+            df2=df
             decision = prepare(df)
             print("Decision:", decision)
 
@@ -225,7 +226,7 @@ async def main2():
             order_blocks = detect_order_blocks(df, market_bias)
             print("Order Blocks:", order_blocks)
 
-            condition = check_last_close(df, fvgs, order_blocks)
+            condition = check_last_close(df2, fvgs, order_blocks)
             print("Condition:", condition)
 
             if condition is not None :#and decision is not None:
@@ -277,5 +278,5 @@ async def main2():
     except Exception as e:
         raise e
         print(f"An error occurred: {e}")
-def main():
-    asyncio.run(main2())
+#def main():
+asyncio.run(main2())
