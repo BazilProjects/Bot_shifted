@@ -92,10 +92,10 @@ def check_last_close(data, fvgs, order_blocks):
     relevant_ob_ranges = []
 
     # Collect ranges for the last FVGs and order blocks
-    for idx, low, high in fvgs[-6:]:  # Get the last six FVGs
+    for idx, low, high in fvgs[-3:]:  # Get the last six FVGs
         relevant_fvg_ranges.append((low, high))
     
-    for idx, low, high in order_blocks[-6:]:  # Get the last six Order Blocks
+    for idx, low, high in order_blocks[-3:]:  # Get the last six Order Blocks
         relevant_ob_ranges.append((low, high))
 
     # Check if the last close is in any FVG or OB
