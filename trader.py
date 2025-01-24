@@ -92,10 +92,10 @@ def check_last_close(data, fvgs, order_blocks):
     relevant_ob_ranges = []
 
     # Collect ranges for the last FVGs and order blocks
-    for idx, low, high in fvgs[-3:]:  # Get the last six FVGs
+    for idx, low, high in fvgs[-5:]:  # Get the last six FVGs
         relevant_fvg_ranges.append((low, high))
     
-    for idx, low, high in order_blocks[-3:]:  # Get the last six Order Blocks
+    for idx, low, high in order_blocks[-5:]:  # Get the last six Order Blocks
         relevant_ob_ranges.append((low, high))
 
     # Check if the last close is in any FVG or OB
@@ -108,16 +108,36 @@ def check_last_close(data, fvgs, order_blocks):
             return "Order Block"
 
     return None
+def check_current_flow_direction(df, tail_no=4):
+    # Check the last 4 candles
+    last_4 = df.tail(tail_no)
 
+    # Determine buy and sell candles
+    last_4['candle_type'] = last_4.apply(lambda row: 'buy' if row['close'] > row['open'] else 'sell', axis=1)
+
+    # Count the number of buy and sell candles
+    buy_count = (last_4['candle_type'] == 'buy').sum()
+    sell_count = (last_4['candle_type'] == 'sell').sum()
+
+    # Determine the majority
+    if buy_count > sell_count:
+        result = "SELL"
+    elif sell_count > buy_count:
+        result = "BUY"
+    else:
+        result =None
+
+    return result
 # Place Buy Order
-def place_buy_order(market_bias, condition, decision):
-    if decision!=None:
-        if market_bias in ["Bullish", "Ranging"] and condition :#and decision== 'LOW':
-            print(f"Placing a buy order. Condition: {condition}, Market Bias: {market_bias}")
-            return 'BUY'
-        elif market_bias in ["Bearish", "Ranging"] and condition:# and decision == 'HIGH':
-            print(f"Condition: {condition}, Market Bias: {market_bias}")
-            return 'SELL'
+def place_buy_order(df,market_bias, condition, decision):
+    choice=check_current_flow_direction(df)
+    print(choice)
+    if market_bias in ["Bullish", "Ranging"] and condition and choice=='BUY':
+        print(f"Placing a buy order. Condition: {condition}, Market Bias: {market_bias}")
+        return 'BUY'
+    elif market_bias in ["Bearish", "Ranging"] and condition and choice=='SELL':
+        print(f"Condition: {condition}, Market Bias: {market_bias}")
+        return 'SELL'
     else:
         return None
 
@@ -229,49 +249,47 @@ async def main2():
             condition = check_last_close(df2, fvgs, order_blocks)
             print("Condition:", condition)
 
-            if condition:#and decision is not None:
-                place_buy_orders=place_buy_order(market_bias, condition, decision)
 
-                if place_buy_orders=='SELL':
-                    stop_loss=current_market_price+3
-                    take_profit=current_market_price-6
-                    try:
-                        
-                        result = await connection.create_market_sell_order(
-                            symbol=symbol,
-                            volume=0.1,
-                            stop_loss=stop_loss,
-                            take_profit=take_profit,
-                        )
-                        print(f'Sell_Signal (T)   :Sell Trade successful For Symbol :{symbol}')
-                        
-                        Trader_success=True
-                    except Exception as err:
-                        print('Trade failed with error:')
-                        print(api.format_error(err))
+            place_buy_orders=place_buy_order(df,market_bias, condition, decision)
 
-                
-                if  place_buy_orders =='BUY':
-                    stop_loss=current_market_price-3
-                    take_profit=current_market_price+6
-                    try:
-                        result = await connection.create_market_buy_order(
-                            symbol=symbol,
-                            volume=0.1,
-                            stop_loss=stop_loss,
-                            take_profit=take_profit,
-                        )
-                        print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
-                        
-                        Trader_success=True
-                    except Exception as err:
-                        print('Trade failed with error:')
-                        print(api.format_error(err))
-                else:
-                    print('Trade Not possible')
+            if place_buy_orders=='SELL':
+                stop_loss=current_market_price+5
+                take_profit=current_market_price-15
+                try:
+                    
+                    result = await connection.create_market_sell_order(
+                        symbol=symbol,
+                        volume=0.1,
+                        stop_loss=stop_loss,
+                        take_profit=take_profit,
+                    )
+                    print(f'Sell_Signal (T)   :Sell Trade successful For Symbol :{symbol}')
+                    
+                    Trader_success=True
+                except Exception as err:
+                    print('Trade failed with error:')
+                    print(api.format_error(err))
+
+            
+            if  place_buy_orders =='BUY':
+                stop_loss=current_market_price-3
+                take_profit=current_market_price+6
+                try:
+                    result = await connection.create_market_buy_order(
+                        symbol=symbol,
+                        volume=0.1,
+                        stop_loss=stop_loss,
+                        take_profit=take_profit,
+                    )
+                    print(f'Buy_Signal (T)   :Buy Trade successful For Symbol :{symbol}')
+                    
+                    Trader_success=True
+                except Exception as err:
+                    print('Trade failed with error:')
+                    print(api.format_error(err))
             else:
-                print('One of the Two Condition and Decision is None')
-                
+                print('Trade Not possible')
+
         print('*'*20)
         print('*'*20)
         print('*'*20)
