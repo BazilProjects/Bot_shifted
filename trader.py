@@ -253,8 +253,8 @@ async def main2():
             place_buy_orders=place_buy_order(df,market_bias, condition, decision)
 
             if place_buy_orders=='SELL':
-                stop_loss=current_market_price+5
-                take_profit=current_market_price-15
+                stop_loss=current_market_price+1.5
+                take_profit=current_market_price-3
                 try:
                     
                     result = await connection.create_market_sell_order(
@@ -272,8 +272,8 @@ async def main2():
 
             
             if  place_buy_orders =='BUY':
-                stop_loss=current_market_price-3
-                take_profit=current_market_price+6
+                stop_loss=current_market_price-1.5
+                take_profit=current_market_price+3
                 try:
                     result = await connection.create_market_buy_order(
                         symbol=symbol,
@@ -296,5 +296,5 @@ async def main2():
     except Exception as e:
         raise e
         print(f"An error occurred: {e}")
-def main():
-    asyncio.run(main2())
+#def main():
+asyncio.run(main2())
