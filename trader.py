@@ -181,7 +181,7 @@ accountId = os.getenv('ACCOUNT_ID') or '3d90c2da-2cb6-4929-b339-2e70820cb975'
 
 # Constants
 symbol='Step Index'
-timeframe='5m'
+timeframe='15m'
 
 
 
@@ -253,8 +253,8 @@ async def main2():
             place_buy_orders=place_buy_order(df,market_bias, condition, decision)
 
             if place_buy_orders=='SELL':
-                stop_loss=current_market_price+1.5
-                take_profit=current_market_price-3
+                stop_loss=current_market_price+7
+                take_profit=current_market_price-21
                 try:
                     
                     result = await connection.create_market_sell_order(
@@ -272,8 +272,8 @@ async def main2():
 
             
             if  place_buy_orders =='BUY':
-                stop_loss=current_market_price-1.5
-                take_profit=current_market_price+3
+                stop_loss=current_market_price-7
+                take_profit=current_market_price+21
                 try:
                     result = await connection.create_market_buy_order(
                         symbol=symbol,
