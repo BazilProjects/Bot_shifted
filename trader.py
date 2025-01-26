@@ -108,7 +108,7 @@ def check_last_close(data, fvgs, order_blocks):
             return "Order Block"
 
     return None
-def check_current_flow_direction(df, tail_no=4):
+def check_current_flow_direction(df, tail_no=8):
     # Check the last 4 candles
     last_4 = df.tail(tail_no)
 
