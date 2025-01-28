@@ -53,9 +53,9 @@ def analyze_bias(data):
             data['low'][i] < data['low'][i + 3]):
             lower_lows += 1
 
-    if higher_highs > 3:
+    if higher_highs > 2:
         market_bias = "Bullish"
-    elif lower_lows > 3:
+    elif lower_lows > 2:
         market_bias = "Bearish"
     else:
         market_bias = "Ranging"
@@ -92,10 +92,10 @@ def check_last_close(data, fvgs, order_blocks):
     relevant_ob_ranges = []
 
     # Collect ranges for the last FVGs and order blocks
-    for idx, low, high in fvgs[-5:]:  # Get the last six FVGs
+    for idx, low, high in fvgs[-8:]:  # Get the last six FVGs
         relevant_fvg_ranges.append((low, high))
     
-    for idx, low, high in order_blocks[-5:]:  # Get the last six Order Blocks
+    for idx, low, high in order_blocks[-8:]:  # Get the last six Order Blocks
         relevant_ob_ranges.append((low, high))
 
     # Check if the last close is in any FVG or OB
@@ -108,6 +108,43 @@ def check_last_close(data, fvgs, order_blocks):
             return "Order Block"
 
     return None
+
+"""
+# Check if Last Close is in Two Relevant FVGs or Order Blocks
+def check_last_close_two(data, fvgs, order_blocks):
+    '''
+    Check if the last closing price is within the ranges of any two FVGs or any two Order Blocks.
+
+    Args:
+        data (pd.DataFrame): A DataFrame containing the 'close' price series.
+        fvgs (list of tuples): List of tuples representing FVGs in the format (idx, low, high).
+        order_blocks (list of tuples): List of tuples representing Order Blocks in the format (idx, low, high).
+
+    Returns:
+        str: "Two FVGs" if the last close is in any two FVG ranges,
+             "Two Order Blocks" if the last close is in any two OB ranges,
+             None if no overlap is found.
+    '''
+    # Get the last closing price
+    last_close = data['close'].iloc[-1]
+
+    # Collect the ranges of the last 8 FVGs and Order Blocks
+    relevant_fvg_ranges = [(low, high) for idx, low, high in fvgs[-8:]]
+    relevant_ob_ranges = [(low, high) for idx, low, high in order_blocks[-8:]]
+
+    # Check if the last close is within two FVG ranges
+    fvg_count = sum(1 for low, high in relevant_fvg_ranges if low <= last_close <= high)
+    if fvg_count >= 2:
+        return "Two FVGs"
+
+    # Check if the last close is within two Order Block ranges
+    ob_count = sum(1 for low, high in relevant_ob_ranges if low <= last_close <= high)
+    if ob_count >= 2:
+        return "Two Order Blocks"
+
+    # If not found in any two ranges, return None
+    return None
+"""
 def check_current_flow_direction(df, tail_no=8):
     # Check the last 4 candles
     last_4 = df.tail(tail_no)
@@ -130,12 +167,12 @@ def check_current_flow_direction(df, tail_no=8):
     return result
 # Place Buy Order
 def place_buy_order(df,market_bias, condition, decision):
-    choice=check_current_flow_direction(df)
-    print(choice)
-    if market_bias in ["Bullish", "Ranging"] and condition and choice=='BUY':
+    #choice=check_current_flow_direction(df)
+    #print(choice)
+    if market_bias in ["Bullish", "Ranging"] and condition and decision=='LOW':
         print(f"Placing a buy order. Condition: {condition}, Market Bias: {market_bias}")
         return 'BUY'
-    elif market_bias in ["Bearish", "Ranging"] and condition and choice=='SELL':
+    elif market_bias in ["Bearish", "Ranging"] and condition and decision=='HIGH':
         print(f"Condition: {condition}, Market Bias: {market_bias}")
         return 'SELL'
     else:
@@ -154,6 +191,8 @@ def prepare(df):
         return 'LOW'
     else:
         return None
+
+
 import warnings
 warnings.filterwarnings("ignore")
 import pandas as pd
@@ -253,8 +292,8 @@ async def main2():
             place_buy_orders=place_buy_order(df,market_bias, condition, decision)
 
             if place_buy_orders=='SELL':
-                stop_loss=current_market_price+7
-                take_profit=current_market_price-21
+                stop_loss=current_market_price+5
+                take_profit=current_market_price-15
                 try:
                     
                     result = await connection.create_market_sell_order(
@@ -272,8 +311,8 @@ async def main2():
 
             
             if  place_buy_orders =='BUY':
-                stop_loss=current_market_price-7
-                take_profit=current_market_price+21
+                stop_loss=current_market_price-5
+                take_profit=current_market_price+15
                 try:
                     result = await connection.create_market_buy_order(
                         symbol=symbol,
