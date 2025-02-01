@@ -293,7 +293,7 @@ async def main2():
 
             if place_buy_orders=='SELL':
                 stop_loss=current_market_price+5
-                take_profit=current_market_price-15
+                take_profit=current_market_price-10
                 try:
                     
                     result = await connection.create_market_sell_order(
@@ -312,7 +312,7 @@ async def main2():
             
             if  place_buy_orders =='BUY':
                 stop_loss=current_market_price-5
-                take_profit=current_market_price+15
+                take_profit=current_market_price+10
                 try:
                     result = await connection.create_market_buy_order(
                         symbol=symbol,
